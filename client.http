@@ -1,4 +1,5 @@
 @baseUrl = http://localhost:3333
+@authToken = {{authenticate_user.response.body.access_token}}
 
 # @name create_account
 POST {{baseUrl}}/accounts
@@ -19,4 +20,16 @@ Content-Type: application/json
 {
   "email": "thales@morato.com",
   "password": "123456"
+}
+
+###
+
+# @name create_question
+POST {{baseUrl}}/questions
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Minha Primeira Pergunta",
+  "content": "Qual o app que o diego ta usando pro chat gpt?"
 }
