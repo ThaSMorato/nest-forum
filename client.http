@@ -33,3 +33,11 @@ Content-Type: application/json
   "title": "Minha Primeira Pergunta",
   "content": "Qual o app que o diego ta usando pro chat gpt?"
 }
+
+###
+
+# @name get_recent_questions
+GET {{baseUrl}}/questions?page=1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
