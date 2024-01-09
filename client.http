@@ -30,7 +30,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "title": "Minha Primeira Pergunta",
+  "title": "Minha Segunda Pergunta",
   "content": "Qual o app que o diego ta usando pro chat gpt?"
 }
 
