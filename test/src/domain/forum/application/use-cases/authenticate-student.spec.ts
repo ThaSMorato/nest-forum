@@ -48,7 +48,7 @@ describe('Create Student Use Case', () => {
       expect(response.isRight()).toBeTruthy()
 
       expect(response.value).toEqual({
-        access_token: expect.any(String),
+        accessToken: expect.any(String),
       })
 
       expect(spyFindByEmail).toBeCalled()
