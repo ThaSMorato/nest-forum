@@ -1,47 +1,50 @@
+import { QuestionFactory } from '$/factories/make-question'
+import { StudentFactory } from '$/factories/make-student'
 import { AppModule } from '@/infra/app.module'
-import { PrismaService } from '@/infra/database/prisma/prisma.service'
+import { DatabaseModule } from '@/infra/database/database.module'
 import { INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test } from '@nestjs/testing'
+import dayjs from 'dayjs'
 import request from 'supertest'
 
 describe('Fetch recent questions (E2E)', () => {
   let app: INestApplication
-  let prisma: PrismaService
   let jwt: JwtService
+  let studentFactory: StudentFactory
+  let questionFactory: QuestionFactory
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule, DatabaseModule],
+      providers: [StudentFactory, QuestionFactory],
     }).compile()
 
     app = moduleRef.createNestApplication()
 
-    prisma = moduleRef.get(PrismaService)
     jwt = moduleRef.get(JwtService)
+    studentFactory = moduleRef.get(StudentFactory)
+    questionFactory = moduleRef.get(QuestionFactory)
 
     await app.init()
   })
 
   test('[GET] /questions', async () => {
-    const user = await prisma.user.create({
-      data: {
-        name: 'Jhon Doe',
-        email: 'jhon.doe@mail.com',
-        password: '123465',
-      },
-    })
+    const user = await studentFactory.makePrismaStudent()
 
-    const accessToken = jwt.sign({ sub: user.id })
+    const accessToken = jwt.sign({ sub: String(user.id) })
 
-    await prisma.question.createMany({
-      data: Array.from({ length: 3 }).map((_, i) => ({
-        title: `Question ${i}`,
-        slug: `question-${i}`,
-        content: 'Question content',
-        authorId: user.id,
-      })),
-    })
+    await Promise.all(
+      Array.from({ length: 3 }).map((_, i) =>
+        questionFactory.makePrismaQuestion({
+          title: `Question ${i}`,
+          authorId: user.id,
+          createdAt: dayjs(new Date())
+            .add(4 - i, 'hours')
+            .toDate(),
+        }),
+      ),
+    )
 
     const response = await request(app.getHttpServer())
       .get('/questions')

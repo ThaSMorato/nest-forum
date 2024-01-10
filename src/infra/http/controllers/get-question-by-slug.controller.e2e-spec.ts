@@ -1,59 +1,50 @@
+import { QuestionFactory } from '$/factories/make-question'
 import { StudentFactory } from '$/factories/make-student'
 import { AppModule } from '@/infra/app.module'
 import { DatabaseModule } from '@/infra/database/database.module'
-import { PrismaService } from '@/infra/database/prisma/prisma.service'
 import { INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 
-describe('Create question (E2E)', () => {
+describe('Get question by slug (E2E)', () => {
   let app: INestApplication
   let jwt: JwtService
   let studentFactory: StudentFactory
-  let prisma: PrismaService
+  let questionFactory: QuestionFactory
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, DatabaseModule],
-      providers: [StudentFactory],
+      providers: [StudentFactory, QuestionFactory],
     }).compile()
 
     app = moduleRef.createNestApplication()
 
     jwt = moduleRef.get(JwtService)
     studentFactory = moduleRef.get(StudentFactory)
-    prisma = moduleRef.get(PrismaService)
+    questionFactory = moduleRef.get(QuestionFactory)
 
     await app.init()
   })
 
-  test('[POST] /questions', async () => {
+  test('[GET] /questions/:slug', async () => {
     const user = await studentFactory.makePrismaStudent()
 
     const accessToken = jwt.sign({ sub: String(user.id) })
 
-    const response = await request(app.getHttpServer())
-      .post('/questions')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        title: 'New Question',
-        content: 'New Question Content',
-      })
-
-    const questionOnDatabase = await prisma.question.findUnique({
-      where: {
-        slug: 'new-question',
-      },
+    const question = await questionFactory.makePrismaQuestion({
+      authorId: user.id,
     })
 
-    expect(response.statusCode).toBe(201)
-    expect(questionOnDatabase).toBeTruthy()
-    expect(questionOnDatabase).toEqual(
-      expect.objectContaining({
-        title: 'New Question',
-        content: 'New Question Content',
-      }),
-    )
+    const response = await request(app.getHttpServer())
+      .get(`/questions/${question.slug.value}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send()
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toEqual({
+      question: expect.objectContaining({ title: question.title }),
+    })
   })
 })
