@@ -10,6 +10,35 @@ export class PrismaAnswerAttachmentsRepository
 {
   constructor(private prisma: PrismaService) {}
 
+  async createMany(attachments: AnswerAttachment[]): Promise<void> {
+    if (attachments.length === 0) {
+      return
+    }
+
+    const updateManyArgs =
+      PrismaAnswerAttachmentMapper.toPrismaUpdateMany(attachments)
+
+    await this.prisma.attachment.updateMany(updateManyArgs)
+  }
+
+  async deleteMany(attachments: AnswerAttachment[]): Promise<void> {
+    if (attachments.length === 0) {
+      return
+    }
+
+    const attachmentsId = attachments
+      .map((attachment) => attachment.id)
+      .map(String)
+
+    await this.prisma.attachment.deleteMany({
+      where: {
+        id: {
+          in: attachmentsId,
+        },
+      },
+    })
+  }
+
   async findManyByAnswerId(answerId: string): Promise<AnswerAttachment[]> {
     const answerAttachments = await this.prisma.attachment.findMany({
       where: {

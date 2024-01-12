@@ -80,8 +80,10 @@ describe('Edit Answer Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryRepository = makeInMemoryAnswerRepository()
       inMemoryAttachmentsRepository = new InMemoryAnswerAttachmentsRepository()
+      inMemoryRepository = makeInMemoryAnswerRepository(
+        inMemoryAttachmentsRepository,
+      )
       sut = new EditAnswerUseCase(
         inMemoryRepository,
         inMemoryAttachmentsRepository,
@@ -89,15 +91,22 @@ describe('Edit Answer Use Case', () => {
     })
 
     it('should be able to Edit a answer', async () => {
-      await inMemoryRepository.create(newAnswer)
+      const newIntegrationAnswer = makeAnswer(
+        {
+          authorId: new UniqueEntityID('author-1'),
+        },
+        new UniqueEntityID('answer-1'),
+      )
+
+      await inMemoryRepository.create(newIntegrationAnswer)
 
       inMemoryAttachmentsRepository.items.push(
         makeAnswerAttachment({
-          answerId: newAnswer.id,
+          answerId: newIntegrationAnswer.id,
           attachmentId: new UniqueEntityID('1'),
         }),
         makeAnswerAttachment({
-          answerId: newAnswer.id,
+          answerId: newIntegrationAnswer.id,
           attachmentId: new UniqueEntityID('2'),
         }),
       )
@@ -127,7 +136,14 @@ describe('Edit Answer Use Case', () => {
       ])
     })
     it('should throw if receives a not valid author id', async () => {
-      await inMemoryRepository.create(newAnswer)
+      const newIntegrationAnswer = makeAnswer(
+        {
+          authorId: new UniqueEntityID('author-1'),
+        },
+        new UniqueEntityID('answer-1'),
+      )
+
+      await inMemoryRepository.create(newIntegrationAnswer)
 
       const spyEdit = vi.spyOn(inMemoryRepository, 'save')
 
@@ -155,6 +171,56 @@ describe('Edit Answer Use Case', () => {
       expect(response.isLeft()).toBeTruthy()
       expect(response.value).toBeInstanceOf(ResourceNotFoundError)
       expect(spyEdit).not.toBeCalled()
+    })
+    it('should sync new and removed attachments when editing a answer', async () => {
+      const newIntegrationAnswer = makeAnswer(
+        {
+          authorId: new UniqueEntityID('author-1'),
+        },
+        new UniqueEntityID('answer-1'),
+      )
+      await inMemoryRepository.create(newIntegrationAnswer)
+
+      inMemoryAttachmentsRepository.items.push(
+        makeAnswerAttachment({
+          answerId: newIntegrationAnswer.id,
+          attachmentId: new UniqueEntityID('1'),
+        }),
+        makeAnswerAttachment({
+          answerId: newIntegrationAnswer.id,
+          attachmentId: new UniqueEntityID('2'),
+        }),
+      )
+
+      const spyCreateMany = vi.spyOn(
+        inMemoryAttachmentsRepository,
+        'createMany',
+      )
+
+      const spyDeleteMany = vi.spyOn(
+        inMemoryAttachmentsRepository,
+        'deleteMany',
+      )
+
+      const response = await sut.execute({
+        answerId: String(newIntegrationAnswer.id),
+        authorId: 'author-1',
+        content: 'new content',
+        attachmentsIds: ['1', '3'],
+      })
+
+      expect(response.isRight()).toBeTruthy()
+      expect(spyCreateMany).toHaveBeenCalled()
+      expect(spyDeleteMany).toHaveBeenCalled()
+      expect(inMemoryAttachmentsRepository.items).toHaveLength(2)
+      expect(inMemoryAttachmentsRepository.items).toEqual([
+        expect.objectContaining({
+          attachmentId: new UniqueEntityID('1'),
+        }),
+        expect.objectContaining({
+          attachmentId: new UniqueEntityID('3'),
+        }),
+      ])
     })
   })
 })

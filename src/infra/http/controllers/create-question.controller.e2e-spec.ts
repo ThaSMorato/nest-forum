@@ -1,3 +1,4 @@
+import { AttachmentFactory } from '$/factories/make-attachment'
 import { StudentFactory } from '$/factories/make-student'
 import { AppModule } from '@/infra/app.module'
 import { DatabaseModule } from '@/infra/database/database.module'
@@ -11,12 +12,13 @@ describe('Create question (E2E)', () => {
   let app: INestApplication
   let jwt: JwtService
   let studentFactory: StudentFactory
+  let attachmentFactory: AttachmentFactory
   let prisma: PrismaService
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, DatabaseModule],
-      providers: [StudentFactory],
+      providers: [StudentFactory, AttachmentFactory],
     }).compile()
 
     app = moduleRef.createNestApplication()
@@ -24,12 +26,18 @@ describe('Create question (E2E)', () => {
     jwt = moduleRef.get(JwtService)
     studentFactory = moduleRef.get(StudentFactory)
     prisma = moduleRef.get(PrismaService)
+    attachmentFactory = moduleRef.get(AttachmentFactory)
 
     await app.init()
   })
 
   test('[POST] /questions', async () => {
     const user = await studentFactory.makePrismaStudent()
+
+    const attachments = await Promise.all([
+      attachmentFactory.makePrismaAttachment(),
+      attachmentFactory.makePrismaAttachment(),
+    ])
 
     const accessToken = jwt.sign({ sub: String(user.id) })
 
@@ -39,6 +47,7 @@ describe('Create question (E2E)', () => {
       .send({
         title: 'New Question',
         content: 'New Question Content',
+        attachments: attachments.map((attachment) => attachment.id).map(String),
       })
 
     const questionOnDatabase = await prisma.question.findUnique({
@@ -55,5 +64,13 @@ describe('Create question (E2E)', () => {
         content: 'New Question Content',
       }),
     )
+
+    const attchmentsOnDatabase = await prisma.attachment.findMany({
+      where: {
+        questionId: questionOnDatabase?.id,
+      },
+    })
+
+    expect(attchmentsOnDatabase).toHaveLength(2)
   })
 })

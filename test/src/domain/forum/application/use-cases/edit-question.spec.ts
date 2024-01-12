@@ -1,4 +1,3 @@
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { makeQuestion } from '$/factories/make-question'
 import { makeQuestionAttachment } from '$/factories/make-question-attachment'
 import {

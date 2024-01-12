@@ -1,11 +1,13 @@
 import { makeInMemoryAnswerRepository } from '$/factories/make-in-memory-answer-repository'
 import { fakeAnswersRepository } from '$/repositories/fake-repositories/fake-answers-repository'
+import { InMemoryAnswerAttachmentsRepository } from '$/repositories/in-memory/in-memory-answer-attachments-repository'
 import { InMemoryAnswersRepository } from '$/repositories/in-memory/in-memory-answers-repository'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { AnswerQuestionUseCase } from '@/domain/forum/application/use-cases/answer-question'
 
 let sut: AnswerQuestionUseCase
 let inMemoryRepository: InMemoryAnswersRepository
+let inMemoryAttachmentsRepository: InMemoryAnswerAttachmentsRepository
 
 describe('Answer Question Use Case', () => {
   beforeEach(() => {
@@ -37,7 +39,10 @@ describe('Answer Question Use Case', () => {
 
   describe('Integration Tests', () => {
     beforeEach(() => {
-      inMemoryRepository = makeInMemoryAnswerRepository()
+      inMemoryAttachmentsRepository = new InMemoryAnswerAttachmentsRepository()
+      inMemoryRepository = makeInMemoryAnswerRepository(
+        inMemoryAttachmentsRepository,
+      )
       sut = new AnswerQuestionUseCase(inMemoryRepository)
     })
     it('should be able to answer a question', async () => {
@@ -66,6 +71,31 @@ describe('Answer Question Use Case', () => {
       expect(inMemoryRepository.items[0].attachments.currentItems).toEqual([
         expect.objectContaining({ attachmentId: new UniqueEntityID('1') }),
         expect.objectContaining({ attachmentId: new UniqueEntityID('2') }),
+      ])
+    })
+    it('should persist attachments when creating a new answer', async () => {
+      const spyCreateMany = vi.spyOn(
+        inMemoryAttachmentsRepository,
+        'createMany',
+      )
+
+      const response = await sut.execute({
+        authorId: '1',
+        questionId: '1',
+        content: 'Conteúdo da nova pergunta',
+        attachmentsIds: ['1', '2'],
+      })
+
+      expect(response.isRight()).toBeTruthy()
+      expect(spyCreateMany).toHaveBeenCalled()
+      expect(inMemoryAttachmentsRepository.items).toHaveLength(2)
+      expect(inMemoryAttachmentsRepository.items).toEqual([
+        expect.objectContaining({
+          attachmentId: new UniqueEntityID('1'),
+        }),
+        expect.objectContaining({
+          attachmentId: new UniqueEntityID('2'),
+        }),
       ])
     })
   })
