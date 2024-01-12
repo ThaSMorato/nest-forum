@@ -5,12 +5,14 @@ const create = vi.fn()
 const _delete = vi.fn()
 const findById = vi.fn()
 const findManyByQuestionId = vi.fn()
+const findManyByQuestionIdWithAuthor = vi.fn()
 
 export const functions = {
   create,
   delete: _delete,
   findById,
   findManyByQuestionId,
+  findManyByQuestionIdWithAuthor,
 }
 
 export const fakeQuestionCommentsRepository: QuestionCommentsRepository =

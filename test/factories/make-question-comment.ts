@@ -3,6 +3,7 @@ import {
   QuestionComment,
   QuestionCommentProps,
 } from '@/domain/forum/enterprise/entities/question-comment'
+import { CommentWithAuthor } from '@/domain/forum/enterprise/entities/value-objects/comment-with-author'
 import { PrismaQuestionCommentMapper } from '@/infra/database/prisma/mappers/prisma-question-comment.mapper'
 import { PrismaService } from '@/infra/database/prisma/prisma.service'
 import { faker } from '@faker-js/faker'
@@ -21,6 +22,21 @@ export function makeQuestionComment(
     },
     id,
   )
+
+  return questionComment
+}
+
+export function makeQuestionCommentWithAuthor(
+  override: Partial<CommentWithAuthor> = {},
+) {
+  const questionComment = CommentWithAuthor.create({
+    authorId: new UniqueEntityID(),
+    content: faker.lorem.text(),
+    author: faker.person.fullName(),
+    commentId: new UniqueEntityID(),
+    createdAt: new Date(),
+    ...override,
+  })
 
   return questionComment
 }
