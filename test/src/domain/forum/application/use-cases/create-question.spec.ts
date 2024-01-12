@@ -1,11 +1,13 @@
 import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { fakeQuestionsRepository } from '$/repositories/fake-repositories/fake-questions-repository'
+import { InMemoryQuestionAttachmentsRepository } from '$/repositories/in-memory/in-memory-question-attachments-repository'
 import { InMemoryQuestionsRepository } from '$/repositories/in-memory/in-memory-questions-repository'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { CreateQuestionUseCase } from '@/domain/forum/application/use-cases/create-question'
 
 let sut: CreateQuestionUseCase
 let inMemoryRepository: InMemoryQuestionsRepository
+let InMemoryAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 describe('Create Question Use Case', () => {
   beforeEach(() => {
@@ -40,7 +42,11 @@ describe('Create Question Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryRepository = makeInMemoryQuestionRepository()
+      InMemoryAttachmentsRepository =
+        new InMemoryQuestionAttachmentsRepository()
+      inMemoryRepository = makeInMemoryQuestionRepository(
+        InMemoryAttachmentsRepository,
+      )
       sut = new CreateQuestionUseCase(inMemoryRepository)
     })
 
@@ -78,6 +84,31 @@ describe('Create Question Use Case', () => {
       expect(spyCreate).toBeCalled()
 
       expect(inMemoryRepository.items.length).toEqual(1)
+    })
+    it('should persist attachments when creating a new question', async () => {
+      const spyCreateMany = vi.spyOn(
+        InMemoryAttachmentsRepository,
+        'createMany',
+      )
+
+      const response = await sut.execute({
+        authorId: '1',
+        title: 'Nova pergunta',
+        content: 'Conteúdo da nova pergunta',
+        attachmentsIds: ['1', '2'],
+      })
+
+      expect(response.isRight()).toBeTruthy()
+      expect(spyCreateMany).toHaveBeenCalled()
+      expect(InMemoryAttachmentsRepository.items).toHaveLength(2)
+      expect(InMemoryAttachmentsRepository.items).toEqual([
+        expect.objectContaining({
+          attachmentId: new UniqueEntityID('1'),
+        }),
+        expect.objectContaining({
+          attachmentId: new UniqueEntityID('2'),
+        }),
+      ])
     })
   })
 })
