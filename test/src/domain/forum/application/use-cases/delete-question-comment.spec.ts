@@ -9,9 +9,11 @@ import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { DeleteQuestionCommentUseCase } from '@/domain/forum/application/use-cases/delete-question-comment'
 import { NotAllowedError } from '@/core/errors/errors/not-allowed-error'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let sut: DeleteQuestionCommentUseCase
 let inMemoryRepository: InMemoryQuestionCommentsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
 
 const newQuestionComment = makeQuestionComment(
   {
@@ -72,7 +74,10 @@ describe('Delete Question Comment Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryRepository = new InMemoryQuestionCommentsRepository()
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryRepository = new InMemoryQuestionCommentsRepository(
+        inMemoryStudentsRepository,
+      )
       sut = new DeleteQuestionCommentUseCase(inMemoryRepository)
     })
 

@@ -1,4 +1,3 @@
-import { makeInMemoryAnswerRepository } from '$/factories/make-in-memory-answer-repository'
 import { makeAnswer } from '$/factories/make-answer'
 import { makeAnswerComment } from '$/factories/make-answer-comment'
 import { InMemoryNotificationsRepository } from '$/repositories/in-memory/in-memory-notifications-repository'
@@ -15,11 +14,15 @@ import {
 } from '@/domain/notification/application/use-cases/send-notification'
 import { Notification } from '@/domain/notification/enterprise/entities/notification'
 import { MockInstance } from 'vitest'
+import { InMemoryAnswerAttachmentsRepository } from '$/repositories/in-memory/in-memory-answer-attachments-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let inMemoryAnswerCommentsRepository: InMemoryAnswerCommentsRepository
 let inMemoryAnswersRepository: InMemoryAnswersRepository
 let sendNotificationUseCase: SendNotificationUseCase
 let inMemoryNotificationsRepository: InMemoryNotificationsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAnswerAttachmentsRepository: InMemoryAnswerAttachmentsRepository
 
 let spyFindById: MockInstance<[string], Promise<Answer | null>>
 let spyExecute: MockInstance<
@@ -34,8 +37,15 @@ describe('On Answer Best Answer Chosen Subscribe', () => {
     sendNotificationUseCase = new SendNotificationUseCase(
       inMemoryNotificationsRepository,
     )
-    inMemoryAnswersRepository = makeInMemoryAnswerRepository()
-    inMemoryAnswerCommentsRepository = new InMemoryAnswerCommentsRepository()
+    inMemoryStudentsRepository = new InMemoryStudentsRepository()
+    inMemoryAnswerAttachmentsRepository =
+      new InMemoryAnswerAttachmentsRepository()
+    inMemoryAnswersRepository = new InMemoryAnswersRepository(
+      inMemoryAnswerAttachmentsRepository,
+    )
+    inMemoryAnswerCommentsRepository = new InMemoryAnswerCommentsRepository(
+      inMemoryStudentsRepository,
+    )
 
     spyFindById = vi.spyOn(inMemoryAnswersRepository, 'findById')
     spyExecute = vi.spyOn(sendNotificationUseCase, 'execute')

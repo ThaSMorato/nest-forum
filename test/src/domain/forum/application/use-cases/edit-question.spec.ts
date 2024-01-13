@@ -15,10 +15,14 @@ import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { EditQuestionUseCase } from '@/domain/forum/application/use-cases/edit-question'
 import { NotAllowedError } from '@/core/errors/errors/not-allowed-error'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let sut: EditQuestionUseCase
 let inMemoryRepository: InMemoryQuestionsRepository
-let inMemoryAttachmentsRepository: InMemoryQuestionAttachmentsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 const newQuestion = makeQuestion(
   {
@@ -88,16 +92,20 @@ describe('Edit Question Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryAttachmentsRepository =
+      inMemoryQuestionAttachmentsRepository =
         new InMemoryQuestionAttachmentsRepository()
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
 
       inMemoryRepository = new InMemoryQuestionsRepository(
+        inMemoryStudentsRepository,
         inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
       )
 
       sut = new EditQuestionUseCase(
         inMemoryRepository,
-        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
       )
     })
     it('should be able to Edit a question', async () => {
@@ -110,7 +118,7 @@ describe('Edit Question Use Case', () => {
 
       await inMemoryRepository.create(newIntegrationQuestion)
 
-      inMemoryAttachmentsRepository.items.push(
+      inMemoryQuestionAttachmentsRepository.items.push(
         makeQuestionAttachment({
           questionId: newIntegrationQuestion.id,
           attachmentId: new UniqueEntityID('1'),
@@ -197,7 +205,7 @@ describe('Edit Question Use Case', () => {
 
       await inMemoryRepository.create(newIntegrationQuestion)
 
-      inMemoryAttachmentsRepository.items.push(
+      inMemoryQuestionAttachmentsRepository.items.push(
         makeQuestionAttachment({
           questionId: newIntegrationQuestion.id,
           attachmentId: new UniqueEntityID('1'),
@@ -209,12 +217,12 @@ describe('Edit Question Use Case', () => {
       )
 
       const spyCreateMany = vi.spyOn(
-        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
         'createMany',
       )
 
       const spyDeleteMany = vi.spyOn(
-        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
         'deleteMany',
       )
 
@@ -229,8 +237,8 @@ describe('Edit Question Use Case', () => {
       expect(response.isRight()).toBeTruthy()
       expect(spyCreateMany).toHaveBeenCalled()
       expect(spyDeleteMany).toHaveBeenCalled()
-      expect(inMemoryAttachmentsRepository.items).toHaveLength(2)
-      expect(inMemoryAttachmentsRepository.items).toEqual([
+      expect(inMemoryQuestionAttachmentsRepository.items).toHaveLength(2)
+      expect(inMemoryQuestionAttachmentsRepository.items).toEqual([
         expect.objectContaining({
           attachmentId: new UniqueEntityID('1'),
         }),

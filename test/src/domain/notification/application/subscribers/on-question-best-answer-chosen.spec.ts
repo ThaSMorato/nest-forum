@@ -1,10 +1,12 @@
 import { makeAnswer } from '$/factories/make-answer'
-import { makeInMemoryAnswerRepository } from '$/factories/make-in-memory-answer-repository'
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { makeQuestion } from '$/factories/make-question'
+import { InMemoryAnswerAttachmentsRepository } from '$/repositories/in-memory/in-memory-answer-attachments-repository'
 import { InMemoryAnswersRepository } from '$/repositories/in-memory/in-memory-answers-repository'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
 import { InMemoryNotificationsRepository } from '$/repositories/in-memory/in-memory-notifications-repository'
+import { InMemoryQuestionAttachmentsRepository } from '$/repositories/in-memory/in-memory-question-attachments-repository'
 import { InMemoryQuestionsRepository } from '$/repositories/in-memory/in-memory-questions-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 import { waitFor } from '$/utils/wait-for'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { Answer } from '@/domain/forum/enterprise/entities/answer'
@@ -21,6 +23,10 @@ let inMemoryAnswersRepository: InMemoryAnswersRepository
 let inMemoryQuestionsRepository: InMemoryQuestionsRepository
 let sendNotificationUseCase: SendNotificationUseCase
 let inMemoryNotificationsRepository: InMemoryNotificationsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
+let inMemoryAnswerAttachmentsRepository: InMemoryAnswerAttachmentsRepository
 
 let spyFindById: MockInstance<[string], Promise<Answer | null>>
 let spyExecute: MockInstance<
@@ -35,8 +41,21 @@ describe('On Question Best Answer Chosen Subscribe', () => {
     sendNotificationUseCase = new SendNotificationUseCase(
       inMemoryNotificationsRepository,
     )
-    inMemoryQuestionsRepository = makeInMemoryQuestionRepository()
-    inMemoryAnswersRepository = makeInMemoryAnswerRepository()
+    inMemoryStudentsRepository = new InMemoryStudentsRepository()
+    inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
+    inMemoryQuestionAttachmentsRepository =
+      new InMemoryQuestionAttachmentsRepository()
+    inMemoryAnswerAttachmentsRepository =
+      new InMemoryAnswerAttachmentsRepository()
+
+    inMemoryQuestionsRepository = new InMemoryQuestionsRepository(
+      inMemoryStudentsRepository,
+      inMemoryAttachmentsRepository,
+      inMemoryQuestionAttachmentsRepository,
+    )
+    inMemoryAnswersRepository = new InMemoryAnswersRepository(
+      inMemoryAnswerAttachmentsRepository,
+    )
 
     spyFindById = vi.spyOn(inMemoryAnswersRepository, 'findById')
     spyExecute = vi.spyOn(sendNotificationUseCase, 'execute')

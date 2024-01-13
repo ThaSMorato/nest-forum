@@ -13,10 +13,12 @@ import { InMemoryAnswersRepository } from '$/repositories/in-memory/in-memory-an
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { CommentOnAnswerUseCase } from '@/domain/forum/application/use-cases/comment-on-answer'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let sut: CommentOnAnswerUseCase
 let inMemoryAnswerCommentsRepository: InMemoryAnswerCommentsRepository
 let inMemoryAnswersRepository: InMemoryAnswersRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
 
 const newAnswer = makeAnswer({
   authorId: new UniqueEntityID('author-1'),
@@ -70,7 +72,10 @@ describe('Comment on Answer Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryAnswerCommentsRepository = new InMemoryAnswerCommentsRepository()
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryAnswerCommentsRepository = new InMemoryAnswerCommentsRepository(
+        inMemoryStudentsRepository,
+      )
       inMemoryAnswersRepository = makeInMemoryAnswerRepository()
       sut = new CommentOnAnswerUseCase(
         inMemoryAnswersRepository,

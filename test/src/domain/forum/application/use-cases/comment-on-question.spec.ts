@@ -1,4 +1,3 @@
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { makeQuestion } from '$/factories/make-question'
 import {
   fakeQuestionCommentsRepository,
@@ -13,10 +12,16 @@ import { InMemoryQuestionsRepository } from '$/repositories/in-memory/in-memory-
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { CommentOnQuestionUseCase } from '@/domain/forum/application/use-cases/comment-on-question'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
+import { InMemoryQuestionAttachmentsRepository } from '$/repositories/in-memory/in-memory-question-attachments-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let sut: CommentOnQuestionUseCase
 let inMemoryQuestionCommentsRepository: InMemoryQuestionCommentsRepository
 let inMemoryQuestionsRepository: InMemoryQuestionsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 const newQuestion = makeQuestion({
   authorId: new UniqueEntityID('author-1'),
@@ -68,9 +73,17 @@ describe('Comment on Question Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
+      inMemoryQuestionAttachmentsRepository =
+        new InMemoryQuestionAttachmentsRepository()
       inMemoryQuestionCommentsRepository =
-        new InMemoryQuestionCommentsRepository()
-      inMemoryQuestionsRepository = makeInMemoryQuestionRepository()
+        new InMemoryQuestionCommentsRepository(inMemoryStudentsRepository)
+      inMemoryQuestionsRepository = new InMemoryQuestionsRepository(
+        inMemoryStudentsRepository,
+        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
+      )
       sut = new CommentOnQuestionUseCase(
         inMemoryQuestionsRepository,
         inMemoryQuestionCommentsRepository,

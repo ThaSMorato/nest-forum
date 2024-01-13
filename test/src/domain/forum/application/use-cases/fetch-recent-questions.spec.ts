@@ -1,15 +1,20 @@
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { makeQuestion } from '$/factories/make-question'
 import {
   fakeQuestionsRepository,
   functions,
 } from '$/repositories/fake-repositories/fake-questions-repository'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
+import { InMemoryQuestionAttachmentsRepository } from '$/repositories/in-memory/in-memory-question-attachments-repository'
 import { InMemoryQuestionsRepository } from '$/repositories/in-memory/in-memory-questions-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 import { Right } from '@/core/either'
 import { FetchRecentQuestionsUseCase } from '@/domain/forum/application/use-cases/fetch-recent-questions'
 
 let sut: FetchRecentQuestionsUseCase
 let inMemoryRepository: InMemoryQuestionsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 describe('Fetch Recent Questions Use Case', () => {
   beforeEach(() => {
@@ -42,7 +47,15 @@ describe('Fetch Recent Questions Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryRepository = makeInMemoryQuestionRepository()
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
+      inMemoryQuestionAttachmentsRepository =
+        new InMemoryQuestionAttachmentsRepository()
+      inMemoryRepository = new InMemoryQuestionsRepository(
+        inMemoryStudentsRepository,
+        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
+      )
       sut = new FetchRecentQuestionsUseCase(inMemoryRepository)
     })
 

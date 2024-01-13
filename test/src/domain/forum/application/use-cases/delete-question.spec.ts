@@ -1,4 +1,3 @@
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { makeQuestion } from '$/factories/make-question'
 import { makeQuestionAttachment } from '$/factories/make-question-attachment'
 import {
@@ -12,10 +11,14 @@ import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { DeleteQuestionUseCase } from '@/domain/forum/application/use-cases/delete-question'
 import { NotAllowedError } from '@/core/errors/errors/not-allowed-error'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
 
 let sut: DeleteQuestionUseCase
 let inMemoryRepository: InMemoryQuestionsRepository
-let inMemoryAttachmentsRepository: InMemoryQuestionAttachmentsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 const newQuestion = makeQuestion(
   {
@@ -72,10 +75,14 @@ describe('Delete Question Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryAttachmentsRepository =
+      inMemoryQuestionAttachmentsRepository =
         new InMemoryQuestionAttachmentsRepository()
-      inMemoryRepository = makeInMemoryQuestionRepository(
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
+      inMemoryRepository = new InMemoryQuestionsRepository(
+        inMemoryStudentsRepository,
         inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
       )
       sut = new DeleteQuestionUseCase(inMemoryRepository)
     })
@@ -83,7 +90,7 @@ describe('Delete Question Use Case', () => {
     it('should be able to delete a question', async () => {
       await inMemoryRepository.create(newQuestion)
 
-      inMemoryAttachmentsRepository.items.push(
+      inMemoryQuestionAttachmentsRepository.items.push(
         makeQuestionAttachment({
           questionId: newQuestion.id,
           attachmentId: new UniqueEntityID('1'),
@@ -97,7 +104,7 @@ describe('Delete Question Use Case', () => {
       const spyFindById = vi.spyOn(inMemoryRepository, 'findById')
       const spyDelete = vi.spyOn(inMemoryRepository, 'delete')
       const spyDeleteMany = vi.spyOn(
-        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
         'deleteManyByQuestionId',
       )
 
@@ -110,7 +117,7 @@ describe('Delete Question Use Case', () => {
       expect(spyDelete).toBeCalled()
       expect(spyDeleteMany).toBeCalled()
       expect(inMemoryRepository.items.length).toBe(0)
-      expect(inMemoryAttachmentsRepository.items.length).toBe(0)
+      expect(inMemoryQuestionAttachmentsRepository.items.length).toBe(0)
     })
     it('should throw if receives a not valid author id', async () => {
       await inMemoryRepository.create(newQuestion)

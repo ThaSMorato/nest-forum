@@ -1,6 +1,5 @@
 import { makeAnswer } from '$/factories/make-answer'
 import { makeInMemoryAnswerRepository } from '$/factories/make-in-memory-answer-repository'
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { makeQuestion } from '$/factories/make-question'
 import {
   fakeAnswersRepository,
@@ -16,10 +15,17 @@ import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { ChooseQuestionBestAnswerUseCase } from '@/domain/forum/application/use-cases/choose-question-best-answer'
 import { NotAllowedError } from '@/core/errors/errors/not-allowed-error'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
+import { InMemoryQuestionAttachmentsRepository } from '$/repositories/in-memory/in-memory-question-attachments-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let sut: ChooseQuestionBestAnswerUseCase
 let inMemoryAnswersRepository: InMemoryAnswersRepository
 let inMemoryQuestionsRepository: InMemoryQuestionsRepository
+
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 const newQuestion = makeQuestion({
   authorId: new UniqueEntityID('author-1'),
@@ -95,8 +101,18 @@ describe('Chose Question Best Answer Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
+      inMemoryQuestionAttachmentsRepository =
+        new InMemoryQuestionAttachmentsRepository()
+
       inMemoryAnswersRepository = makeInMemoryAnswerRepository()
-      inMemoryQuestionsRepository = makeInMemoryQuestionRepository()
+      inMemoryQuestionsRepository = new InMemoryQuestionsRepository(
+        inMemoryStudentsRepository,
+        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
+      )
+
       sut = new ChooseQuestionBestAnswerUseCase(
         inMemoryAnswersRepository,
         inMemoryQuestionsRepository,

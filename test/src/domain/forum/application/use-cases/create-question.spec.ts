@@ -1,13 +1,16 @@
-import { makeInMemoryQuestionRepository } from '$/factories/make-in-memory-question-repository'
 import { fakeQuestionsRepository } from '$/repositories/fake-repositories/fake-questions-repository'
+import { InMemoryAttachmentsRepository } from '$/repositories/in-memory/in-memory-attachments-repository'
 import { InMemoryQuestionAttachmentsRepository } from '$/repositories/in-memory/in-memory-question-attachments-repository'
 import { InMemoryQuestionsRepository } from '$/repositories/in-memory/in-memory-questions-repository'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { CreateQuestionUseCase } from '@/domain/forum/application/use-cases/create-question'
 
 let sut: CreateQuestionUseCase
 let inMemoryRepository: InMemoryQuestionsRepository
-let InMemoryAttachmentsRepository: InMemoryQuestionAttachmentsRepository
+let inMemoryAttachmentsRepository: InMemoryAttachmentsRepository
+let inMemoryStudentsRepository: InMemoryStudentsRepository
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository
 
 describe('Create Question Use Case', () => {
   beforeEach(() => {
@@ -42,10 +45,15 @@ describe('Create Question Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      InMemoryAttachmentsRepository =
+      inMemoryAttachmentsRepository = new InMemoryAttachmentsRepository()
+
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryQuestionAttachmentsRepository =
         new InMemoryQuestionAttachmentsRepository()
-      inMemoryRepository = makeInMemoryQuestionRepository(
-        InMemoryAttachmentsRepository,
+      inMemoryRepository = new InMemoryQuestionsRepository(
+        inMemoryStudentsRepository,
+        inMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
       )
       sut = new CreateQuestionUseCase(inMemoryRepository)
     })
@@ -87,7 +95,7 @@ describe('Create Question Use Case', () => {
     })
     it('should persist attachments when creating a new question', async () => {
       const spyCreateMany = vi.spyOn(
-        InMemoryAttachmentsRepository,
+        inMemoryQuestionAttachmentsRepository,
         'createMany',
       )
 
@@ -100,8 +108,8 @@ describe('Create Question Use Case', () => {
 
       expect(response.isRight()).toBeTruthy()
       expect(spyCreateMany).toHaveBeenCalled()
-      expect(InMemoryAttachmentsRepository.items).toHaveLength(2)
-      expect(InMemoryAttachmentsRepository.items).toEqual([
+      expect(inMemoryQuestionAttachmentsRepository.items).toHaveLength(2)
+      expect(inMemoryQuestionAttachmentsRepository.items).toEqual([
         expect.objectContaining({
           attachmentId: new UniqueEntityID('1'),
         }),

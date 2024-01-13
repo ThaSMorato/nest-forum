@@ -9,9 +9,12 @@ import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { DeleteAnswerCommentUseCase } from '@/domain/forum/application/use-cases/delete-answer-comment'
 import { NotAllowedError } from '@/core/errors/errors/not-allowed-error'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
+import { InMemoryStudentsRepository } from '$/repositories/in-memory/in-memory-students-repository'
 
 let sut: DeleteAnswerCommentUseCase
 let inMemoryRepository: InMemoryAnswerCommentsRepository
+
+let inMemoryStudentsRepository: InMemoryStudentsRepository
 
 const newAnswerComment = makeAnswerComment(
   {
@@ -72,7 +75,10 @@ describe('Delete Answer Comment Use Case', () => {
 
   describe('Integration tests', () => {
     beforeEach(() => {
-      inMemoryRepository = new InMemoryAnswerCommentsRepository()
+      inMemoryStudentsRepository = new InMemoryStudentsRepository()
+      inMemoryRepository = new InMemoryAnswerCommentsRepository(
+        inMemoryStudentsRepository,
+      )
       sut = new DeleteAnswerCommentUseCase(inMemoryRepository)
     })
 
