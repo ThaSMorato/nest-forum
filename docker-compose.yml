@@ -13,3 +13,11 @@ services:
       PG_DATA: /data/postgres
     volumes:
       - ./data/pg:/data/postgres
+
+  cache:
+    container_name: nest-clean-cache
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ./data/redis:/data
